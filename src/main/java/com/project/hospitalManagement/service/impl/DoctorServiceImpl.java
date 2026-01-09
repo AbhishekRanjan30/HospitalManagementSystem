@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class DoctorServiceImpl implements DoctorService {
@@ -40,4 +41,40 @@ public class DoctorServiceImpl implements DoctorService {
         Doctor doctor = doctorRepository.findById(id).orElseThrow(()-> new IllegalArgumentException("Doctor not found with the id "+id));
         return  modelMapper.map(doctor,DoctorDTO.class);
     }
+
+    @Override
+    public void removeDoctorById(Long id) {
+        doctorRepository.deleteById(id);
+    }
+
+    @Override
+    public DoctorDTO updateDoctorById(DoctorDTO doctorDTO, Long id) {
+        Doctor doctor = doctorRepository.findById(id).orElseThrow( () -> new IllegalArgumentException("Doctor is not found with the Id :-  " + id));
+        doctor.setId(id);
+        Doctor newDoctor = doctorRepository.save(doctor);
+        return modelMapper.map(newDoctor, DoctorDTO.class);
+    }
+
+    @Override
+    public DoctorDTO updatePartialDoctor(Long id, Map<String, Object> updates) {
+        Doctor doctor = doctorRepository.findById(id).orElseThrow( () -> new IllegalArgumentException("Doctor is not found with this Id :- " + id));
+        updates.forEach((field,value)-> {
+            switch(field){
+                case "name" :
+                    doctor.setName((String)value);
+                                break;
+                case "email":
+                    doctor.setEmail((String) value);
+                                break;
+                case "specialization" :
+                    doctor.setSpecialization((String) value);
+                                break;
+                default:
+                    throw new IllegalArgumentException("Invalid Field");
+            }
+        });
+            Doctor updatedDoctor = doctorRepository.save((doctor));
+            return modelMapper.map(updatedDoctor,DoctorDTO.class);
+    }
+
 }

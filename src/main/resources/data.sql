@@ -8,4 +8,5 @@ INSERT INTO patient(name, gender, birth_date, email, blood_group)
           ('Amrita Sinha','FEMALE','1989-01-05','amrita@gmail.com','A_POSITIVE');
 
 INSERT INTO doctor(name, specialization, email)
-    VALUES('Abhishek','Brain Surgery','drabhishek@gmail.com');
+    VALUES('Abhishek','Brain Surgery','drabhishek@gmail.com'),
+           ('Raja','Orthopaedic','raja@gmail.com');
