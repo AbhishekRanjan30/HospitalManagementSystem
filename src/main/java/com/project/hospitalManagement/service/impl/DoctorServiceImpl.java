@@ -3,15 +3,17 @@ package com.project.hospitalManagement.service.impl;
 import com.project.hospitalManagement.dto.AddDoctorDTO;
 import com.project.hospitalManagement.dto.DoctorDTO;
 import com.project.hospitalManagement.entity.Doctor;
-import com.project.hospitalManagement.entity.Patient;
+import com.project.hospitalManagement.exceptions.ResourceNotFoundException;
 import com.project.hospitalManagement.repository.DoctorRepository;
 import com.project.hospitalManagement.service.DoctorService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class DoctorServiceImpl implements DoctorService {
@@ -25,7 +27,7 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public List<DoctorDTO> getAllPatient() {
         List<Doctor> doctors = doctorRepository.findAll();
-        return doctors.stream().map(doctor -> new DoctorDTO(doctor.getId(),doctor.getName(),doctor.getEmail(),doctor.getSpecialization())).toList();
+        return doctors.stream().map(doctor -> new DoctorDTO(doctor.getId(), doctor.getName(), doctor.getEmail(), doctor.getSpecialization())).toList();
     }
 
     @Override
@@ -37,44 +39,52 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
-    public DoctorDTO getDoctorById(Long id) {
-        Doctor doctor = doctorRepository.findById(id).orElseThrow(()-> new IllegalArgumentException("Doctor not found with the id "+id));
-        return  modelMapper.map(doctor,DoctorDTO.class);
+    public Optional<DoctorDTO> getDoctorById(Long id) {
+        ifExistDoctor(id);
+        return doctorRepository.findById(id).map(doctor -> modelMapper.map(doctor, DoctorDTO.class));
     }
 
     @Override
     public void removeDoctorById(Long id) {
+        ifExistDoctor(id);
         doctorRepository.deleteById(id);
     }
 
     @Override
     public DoctorDTO updateDoctorById(DoctorDTO doctorDTO, Long id) {
-        Doctor doctor = doctorRepository.findById(id).orElseThrow( () -> new IllegalArgumentException("Doctor is not found with the Id :-  " + id));
+        ifExistDoctor(id);
+        Doctor doctor = modelMapper.map(doctorDTO, Doctor.class);
         doctor.setId(id);
         Doctor newDoctor = doctorRepository.save(doctor);
         return modelMapper.map(newDoctor, DoctorDTO.class);
+
     }
 
     @Override
     public DoctorDTO updatePartialDoctor(Long id, Map<String, Object> updates) {
-        Doctor doctor = doctorRepository.findById(id).orElseThrow( () -> new IllegalArgumentException("Doctor is not found with this Id :- " + id));
-        updates.forEach((field,value)-> {
-            switch(field){
-                case "name" :
-                    doctor.setName((String)value);
-                                break;
+        ifExistDoctor(id);
+        Doctor doctor = doctorRepository.findById(id).get();
+        updates.forEach((field, value) -> {
+            switch (field) {
+                case "name":
+                    doctor.setName((String) value);
+                    break;
                 case "email":
                     doctor.setEmail((String) value);
-                                break;
-                case "specialization" :
+                    break;
+                case "specialization":
                     doctor.setSpecialization((String) value);
-                                break;
+                    break;
                 default:
                     throw new IllegalArgumentException("Invalid Field");
             }
         });
-            Doctor updatedDoctor = doctorRepository.save((doctor));
-            return modelMapper.map(updatedDoctor,DoctorDTO.class);
+        Doctor updatedDoctor = doctorRepository.save((doctor));
+        return modelMapper.map(updatedDoctor, DoctorDTO.class);
     }
 
+    public void ifExistDoctor(Long id) {
+        boolean exists = doctorRepository.existsById(id);
+        if (!exists) throw new ResourceNotFoundException("Resource not found with the id :- " + id);
+    }
 }
